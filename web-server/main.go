@@ -7,23 +7,36 @@ import (
 )
 
 func main() {
-	r := webserver.New()
+	e := webserver.New()
 
-	r.GET("/", func(c *webserver.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello, Proverbs!</h1>")
+	e.GET("/index", func(c *webserver.Context) {
+		c.HTML(http.StatusOK, "<h1>Index Page</h1>")
 	})
 
-	r.GET("/hello", func(c *webserver.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
-	})
+	g1 := e.Group("/v1")
+	{
+		g1.GET("/", func(c *webserver.Context) {
+			c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		})
 
-	r.GET("/hello/:name", func(c *webserver.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
-	})
+		g1.GET("/hello", func(c *webserver.Context) {
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
+		})
+	}
 
-	r.GET("/assets/*filepath", func(c *webserver.Context) {
-		c.JSON(http.StatusOK, webserver.H{"filepath": c.Param("filepath")})
-	})
+	g2 := e.Group("/v2")
+	{
+		g2.GET("/hello/:name", func(c *webserver.Context) {
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
+		})
 
-	r.Run(":9999")
+		g2.GET("/login", func(c *webserver.Context) {
+			c.JSON(http.StatusOK, webserver.H{
+				"username": c.PostForm("username"),
+				"password": c.PostForm("password"),
+			})
+		})
+	}
+
+	e.Run(":9999")
 }

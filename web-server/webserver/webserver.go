@@ -7,25 +7,43 @@ import (
 
 type HandlerFunc func(*Context)
 
+type RouterGroup struct {
+	prefix string
+	engine *Engine
+}
+
 type Engine struct {
+	*RouterGroup
 	router *router
 }
 
 func New() *Engine {
-	return &Engine{router: newRouter()}
+	engine := &Engine{router: newRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	return engine
 }
 
-func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	log.Printf("Route %4s - %s", method, pattern)
-	engine.router.addRoute(method, pattern, handler)
+func (rg *RouterGroup) Group(prefix string) *RouterGroup {
+	engine := rg.engine
+	newGroup := &RouterGroup{
+		prefix: rg.prefix + prefix,
+		engine: engine,
+	}
+	return newGroup
 }
 
-func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.addRoute("GET", pattern, handler)
+func (rg *RouterGroup) addRoute(method string, pattern string, handler HandlerFunc) {
+	fullPattern := rg.prefix + pattern
+	log.Printf("Add route %4s - %s", method, fullPattern)
+	rg.engine.router.addRoute(method, fullPattern, handler)
 }
 
-func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.addRoute("POST", pattern, handler)
+func (rg *RouterGroup) GET(pattern string, handler HandlerFunc) {
+	rg.addRoute("GET", pattern, handler)
+}
+
+func (rg *RouterGroup) POST(pattern string, handler HandlerFunc) {
+	rg.addRoute("POST", pattern, handler)
 }
 
 func (engine *Engine) Run(addr string) (err error) {
