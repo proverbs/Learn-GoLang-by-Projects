@@ -18,6 +18,9 @@ type Context struct {
 	Params map[string]string
 	// response info
 	StatusCode int
+	// middlewares
+	handlers []HandlerFunc
+	idx int
 }
 
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -26,7 +29,22 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req: req,
 		Path: req.URL.Path,
 		Method: req.Method,
+		idx: -1,
 	}
+}
+
+func (c *Context) Next() {
+	s:= len(c.handlers)
+	for c.idx++; c.idx < s; c.idx++ {
+		// provide more compatibility to handlers:
+		// even if they don't call Next(), the chain will still work
+		c.handlers[c.idx](c)
+	}
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.idx = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
 
 func (c *Context) Param(key string) string {
