@@ -1,8 +1,10 @@
 package webserver
 
 import (
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -18,6 +20,8 @@ type Engine struct {
 	*RouterGroup
 	router *router
 	groups []*RouterGroup
+	htmlTemplates *template.Template
+	funcMap template.FuncMap
 }
 
 func New() *Engine {
@@ -55,6 +59,33 @@ func (rg *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	rg.addRoute("POST", pattern, handler)
 }
 
+func (rg *RouterGroup) createStaticHandler(routePath string, fs http.FileSystem) HandlerFunc {
+	routePath = path.Join(rg.prefix, routePath)
+	fileServer := http.StripPrefix(routePath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.Param("filepath")
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+} 
+
+func (rg *RouterGroup) Static(routePath string, root string) {
+	handler := rg.createStaticHandler(routePath, http.Dir(root))
+	pattern := path.Join(routePath, "/*filepath")
+	rg.GET(pattern, handler)
+}
+
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
+}
+
 func (engine *Engine) Run(addr string) (err error) {
 	// use our engine
 	return http.ListenAndServe(addr, engine)
@@ -74,5 +105,6 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	c := newContext(w, req)
 	c.handlers = middlewares
+	c.engine = engine
 	engine.router.handle(c)
 }
