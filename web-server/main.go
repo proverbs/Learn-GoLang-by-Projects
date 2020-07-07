@@ -31,7 +31,7 @@ func formatAsDate(t time.Time, more string) string {
 
 func main() {
 	e := webserver.New()
-	e.Use(webserver.Logger())
+	e.Use(webserver.Logger(), webserver.Recovery())
 	e.SetFuncMap(template.FuncMap{
 		"formatAsDate": formatAsDate,
 	})
@@ -56,6 +56,11 @@ func main() {
 			"now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
 			"more": "lalala",
 		})
+	})
+
+	e.GET("/panic", func(c *webserver.Context) {
+		names := []string{"xxxx"}
+		c.String(http.StatusOK, names[100])
 	})
 
 	g1 := e.Group("/v1")
