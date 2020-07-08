@@ -1,4 +1,4 @@
-package distcache
+package lru
 
 import (
 	"reflect"

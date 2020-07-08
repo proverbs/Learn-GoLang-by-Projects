@@ -1,8 +1,8 @@
-package distcache
+package lru
 
 import "container/list"
 
-type Cache struct {
+type LRUCache struct {
 	maxBytes int64 // maxBytes =0 --> no limit
 	nbytes int64
 	ll *list.List
@@ -19,8 +19,8 @@ type Val interface {
 	Len() int
 }
 
-func New(maxBytes int64, onEvicted func(string, Val)) *Cache {
-	return &Cache{
+func New(maxBytes int64, onEvicted func(string, Val)) *LRUCache {
+	return &LRUCache{
 		maxBytes: maxBytes,
 		ll: list.New(),
 		cache: make(map[string]*list.Element),
@@ -28,7 +28,7 @@ func New(maxBytes int64, onEvicted func(string, Val)) *Cache {
 	}
 }
 
-func (c *Cache) Add(key string, newVal Val) {
+func (c *LRUCache) Add(key string, newVal Val) {
 	if e, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(e)
 		ey, _ := e.Value.(*entry) // type assertion
@@ -44,7 +44,7 @@ func (c *Cache) Add(key string, newVal Val) {
 	}
 }
 
-func (c *Cache) Get(key string) (Val, bool) {
+func (c *LRUCache) Get(key string) (Val, bool) {
 	if e, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(e)
 		ey, _ := e.Value.(*entry)
@@ -53,7 +53,7 @@ func (c *Cache) Get(key string) (Val, bool) {
 	return nil, false
 }
 
-func (c *Cache) Evict() {
+func (c *LRUCache) Evict() {
 	e := c.ll.Back()
 	if e != nil {
 		c.ll.Remove(e)
@@ -66,6 +66,6 @@ func (c *Cache) Evict() {
 	}
 }
 
-func (c *Cache) Len() int {
+func (c *LRUCache) Len() int {
 	return c.ll.Len()
 }
