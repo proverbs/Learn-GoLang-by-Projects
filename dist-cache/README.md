@@ -3,6 +3,7 @@
 1. day-1: https://geektutu.com/post/geecache-day1.html
 2. day-2: https://geektutu.com/post/geecache-day2.html
 3. day-3: https://geektutu.com/post/geecache-day3.html
+4. day-4: https://geektutu.com/post/geecache-day4.html, add `Remove` to `consistent_hash`
 
 ## Readings
 
