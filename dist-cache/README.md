@@ -2,6 +2,7 @@
 
 1. day-1: https://geektutu.com/post/geecache-day1.html
 2. day-2: https://geektutu.com/post/geecache-day2.html
+3. day-3: https://geektutu.com/post/geecache-day3.html
 
 ## Readings
 
