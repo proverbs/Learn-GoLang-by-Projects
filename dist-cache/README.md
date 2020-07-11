@@ -4,6 +4,8 @@
 2. day-2: https://geektutu.com/post/geecache-day2.html
 3. day-3: https://geektutu.com/post/geecache-day3.html
 4. day-4: https://geektutu.com/post/geecache-day4.html, add `Remove` to `consistent_hash`
+5. day-5: https://geektutu.com/post/geecache-day5.html
+    - **TODO**: add/remove peers
 
 ## Readings
 
