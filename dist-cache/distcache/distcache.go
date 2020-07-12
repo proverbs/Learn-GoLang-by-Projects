@@ -3,6 +3,7 @@ package distcache
 import (
 	"fmt"
 	"log"
+	"proverbs.top/distcache/singleflight"
 	"sync"
 )
 
@@ -11,6 +12,7 @@ type Group struct {
 	getter Getter
 	cache Cache
 	peers PeerPicker
+	loader *singleflight.Group
 }
 
 type Getter interface {
@@ -39,6 +41,7 @@ func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
 		name: name,
 		getter: getter,
 		cache: Cache{cacheBytes: cacheBytes},
+		loader: &singleflight.Group{},
 	}
 	groups[name] = g
 	return g
@@ -70,17 +73,24 @@ func (g *Group) RegisterPeers(peers PeerPicker) {
 }
 
 func (g *Group) load(key string) (ByteView, error) {
-	if g.peers != nil {
-		if peer, ok := g.peers.PickPeer(key); ok {
-			if val, err := g.getFromPeer(peer, key); err == nil {
-				return val, nil
-			} else {
-				log.Println("[GeeCache] Failed to get from peer", err)
+	data, er := g.loader.Do(key, func() (interface{}, error) {
+		if g.peers != nil {
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if val, err := g.getFromPeer(peer, key); err == nil {
+					return val, nil
+				} else {
+					log.Println("[GeeCache] Failed to get from peer", err)
+				}
 			}
 		}
+		// if getFromPeer(key) failed, then:
+		return g.getFromLocal(key)
+	})
+
+	if er == nil {
+		return data.(ByteView), nil
 	}
-	// if getFromPeer(key) failed, then:
-	return g.getFromLocal(key)
+	return ByteView{}, er
 }
 
 func (g *Group) getFromLocal(key string) (ByteView, error) {
